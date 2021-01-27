@@ -65,8 +65,9 @@
 
 #### Fragment and Activity
 
-* To test fragment and view-model interactions, use **ServiceLocator pattern** and the **Espresso** and **Mockito** libraries. [\[more\]](https://developer.android.com/codelabs/advanced-android-kotlin-training-testing-test-doubles/#7)
+* Test Activity and its lifecycle using **[ActivityScenario](https://developer.android.com/reference/androidx/test/core/app/ActivityScenario)** and [**ActivityScenarioRule**](https://developer.android.com/reference/androidx/test/ext/junit/rules/ActivityScenarioRule). Read more at [testing activities](https://developer.android.com/guide/components/activities/testing), [Android Lifecycle](https://developer.android.com/topic/libraries/architecture/lifecycle#lc), and also [examples](testing-activity.md).
 * To launch a fragment from a test, using [`launchFragmentInContainer`](https://developer.android.com/codelabs/advanced-android-kotlin-training-testing-test-doubles#7) to create a `FragmentScenario`, a class from AndroidX Test that wraps around a fragment and gives direct control over the fragment's lifecycle for testing. The fragment will be launched inside a generic empty activity so that it's properly isolated from activity code \(we test the fragment code, not the associated activity\).
+* To test fragment and view-model interactions, use **ServiceLocator pattern** and the **Espresso** and **Mockito** libraries. [[more]](https://developer.android.com/codelabs/advanced-android-kotlin-training-testing-test-doubles/#7)
 
 
 
