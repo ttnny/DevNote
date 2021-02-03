@@ -11,7 +11,7 @@
 
 
 
-## Get
+## Get or Create
 
 - `getSharedPreferences()` to access shared preference files identified by name (specify with the first parameter). This can be called from any `Context` in your app.
 
@@ -47,7 +47,7 @@
 - Notes:
 
   - `apply()` writes update to disk **async** and `commit()` is **sync**, so advoid `commit()` in UI thread.
-  - A **more secure** way is to call `edit()` on an `EncryptedSharedPreferences` object instead of `SharedPreferences` object. [[more](https://developer.android.com/topic/security/data)]
+  - A **more secure** way is to call `edit()` on an [`EncryptedSharedPreferences`](https://developer.android.com/reference/kotlin/androidx/security/crypto/EncryptedSharedPreferences) object instead of `SharedPreferences` object. [[more](https://developer.android.com/topic/security/data)]
 
 
 
