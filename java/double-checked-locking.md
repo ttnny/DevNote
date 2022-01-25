@@ -7,7 +7,7 @@ Double-checked locking optimization (a design pattern) reduces the overhead of a
 - Java `AtomicReference`
 - Java `volatile` variables
 
-One of  the usage examples of using this design pattern is to make a singleton thread-safe.
+One of the usage examples of using this design pattern is to make a singleton thread-safe.
 
 
 
