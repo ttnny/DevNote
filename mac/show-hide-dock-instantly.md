@@ -1,5 +1,3 @@
-
-
 # Show/Hide the macOS Dock Instantly
 
 In **Terminal** app:
