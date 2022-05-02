@@ -16,8 +16,6 @@ An object will be garbage-collected when it is not reachable or not referenced.
 
 
 
-
-
----
+------
 
 https://www.udemy.com/course/android-multithreading/

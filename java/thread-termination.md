@@ -12,6 +12,6 @@ When `run()` method returns.
 
 
 
----
+------
 
 https://www.udemy.com/course/android-multithreading/
