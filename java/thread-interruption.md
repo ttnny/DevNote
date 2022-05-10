@@ -1,41 +1,104 @@
 # Thread Interruption
 
-The interruption mechanism provided by `Thread` and supported by `Thread.sleep()` and `Object.wait()` is a cancellation mechanism; it allows one thread to request that another thread stop what it is doing early. When a method throws `InterruptedException`, it is telling you that if the thread executing the method is interrupted, it will make an attempt to stop what it is doing and return early and indicate its early return by throwing `InterruptedException`. Well-behaved blocking library methods should be responsive to interruption and throw `InterruptedException` so they can be used within cancelable activities without compromising responsiveness.
+- The interrupted thread must support its own interruption. For e.g., if the thread is frequently invoking methods that throw `InterruptedException`, it simply returns from the `run` method after it catches that exception.
 
-Every thread has a Boolean property associated with it that represents its *interrupted status*. The interrupted status is initially false; when a thread is interrupted by some other thread through a call to `Thread.interrupt()`, one of two things happens. If that thread is executing a low-level interruptible blocking method like `Thread.sleep()`, `Thread.join()`, or `Object.wait()`, it unblocks and throws `InterruptedException`. Otherwise, `interrupt()` merely sets the thread's interruption status. Code running in the interrupted thread can later poll the interrupted status to see if it has been requested to stop what it is doing; the interrupted status can be read with `Thread.isInterrupted()` and can be read and cleared in a single operation with the poorly named `Thread.interrupted()`.
+- One thread can request another thread to stop what it is doing early. However, interruption is a cooperative mechanism. The interrupted thread does not necessarily stop what it is doing immediately. It can ignore or will stop at its convenience.
 
-Interruption is a cooperative mechanism. When one thread interrupts another, the interrupted thread does not necessarily stop what it is doing immediately. Instead, interruption is a way of politely asking another thread to stop what it is doing if it wants to, at its convenience. Some methods, like `Thread.sleep()`, take this request seriously, but methods are not required to pay attention to interruption. Methods that do not block but that still may take a long time to execute can respect requests for interruption by polling the interrupted status and return early if interrupted. You are free to ignore an interruption request, but doing so may compromise responsiveness.
+- Every thread has a non-static `isInterrupted()` boolean property that is `false` by default and will be set to `true` when `Thread.interrupt()` is invoked. If that interrupted thread is executing a low-level interruptible blocking method like `Thread.sleep()`, `Thread.join()`, or `Object.wait()`, it unblocks and throws `InterruptedException`.
 
-One of the benefits of the cooperative nature of interruption is that it provides more flexibility for safely constructing cancelable activities. We rarely want an activity to stop immediately; program data structures could be left in an inconsistent state if the activity were canceled mid-update. Interruption allows a cancelable activity to clean up any work in progress, restore invariants, notify other activities of the cancellation, and then terminate.
+- Most blocking methods respond to interruption by throwing `InterruptedException`.
+
+  ```java
+  if (Thread.interrupted()) {
+      throw new InterruptedException();
+  }
+  ```
+
+- Best practice to preserve interruption status is to re-interrupt after handling the `InterruptedException` is done.
+
+  ```java
+  try {
+  	// ...
+  } catch (InterruptedException e) {
+  	Thread.currentThread().interrupt();
+    return; // or break;
+  }
+  ```
+
+  Before a blocking code (on the interrupted thread) throws an `InterruptedException`, it marks the `isInterrupted` as `false`. Thus, when handling of the `InterruptedException` is done, we should also consider preserving the interruption status by calling `Thread.currentThread().interrupt()`.
+
+- Methods should but are not required to pay attention to interruption. Methods that do not block but that still may take a long time to execute can respect requests for interruption by polling the interrupted status and return early if interrupted.
 
 
 
-## with Thread
+## Interruption with Thread
 
-* How to request a task, running on a separate thread, to finish early?
-* How to make a task responsive to such a finish request?
+**One thread cannot stop the other thread. A thread can only request the other thread to stop. The request is made in the form of an interruption.**
 
-**One thread cannot stop the other thread. A thread can only request the other thread to stop. The request is made in the form of an interruption.** Calling the `interrupt()` method on an instance of a`Thread` sets the interrupt status state as `true` on the instance.
+- Calling the `interrupt()` method on an instance of a thread sets the interrupt status state, `isInterrupted`, to `true`.
+- The interrupted thread responds to the interruption request by handling `InterruptedException`.
 
-Use interruption to request a task, running on a separate thread, to finish.
+```java
+public static void main(String[] args) throws InterruptedException {
+    Thread countingThread = new Thread(countingThread());
+    countingThread.start();			// start countingThread on a background thread
+    Thread.sleep(3_000);     		// main thread sleeps for 3s
+    countingThread.interrupt(); // interrupt countingThread
+    countingThread.join(1_000); // main thread waits for 1s before shutdown program
+}
 
-*Question arises that why did Thread.sleep() throw an InterruptedException?* As soon as the `taskThread` was interrupted by the main thread, the `Thread.sleep(1_000)` responded to the interruption by throwing the exception. ***In fact almost all blocking methods respond to interruption by throwing InterruptedException.\***The decision of what to do in the case of interruption is left to the implementing code, which in this example is breaking out of the for loop as per the requirement in the use case.
+private static Runnable countingThread() {
+    return () -> {
+        for (int i = 0; i < 10; i++) {
+            System.out.print(i);
+            try {
+                Thread.sleep(1_000);
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+    };
+}
+```
 
 *Note: Calls to sleep() and join() methods in main() method are blocking and may also throw InterruptedException upon interruption. Handling of the exception here has been omitted for brevity.*
 
-Handle interruption request, which in most cases is done by handling InterruptedException, in the task to make it responsive to a finish request.
 
 
+## Interruption with Executor
 
-## with Executor
+Executor framework is a complete asynchronous task execution framework. Executor framework is preferred over Threads as it provides separation of task execution from the thread management.
 
+```java
+public static void main(String[] args) throws InterruptedException {
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    executor.submit(countingThread());  						// ExecutorService runs the submitted task
+    Thread.sleep(3_000);														// main thread sleeps for 3s
+    executor.shutdownNow();													// running task is interrupted
+    executor.awaitTermination(1, TimeUnit.SECONDS);	// awaits for the service to shutdown
+}
 
+private static Runnable countingThread() {
+    return () -> {
+        for (int i = 0; i < 10; i++) {
+            System.out.print(i);
+            try {
+                Thread.sleep(1_000);
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+    };
+}
+```
 
-## InterruptedException & Interruption Status
+Specific task can be interrupted without shutting down the `ExecutorService`. On submitting a task to the service an instance of `Future<?>` is returned by the service. You may call the `cancel()` method on that instance to interrupt the task. In situations when you service a web request by running parallel tasks, this method of cancelling tasks and not shutting down the service helps in re-using the service across multiple requests. In such situations you may want to shutdown the service only on shutdown of your web application. Calling the `cancel()` with `true` causes the task to be interrupted.
 
-***what happens to a thread’s interruption status when a blocking code responds to interruption\*** by throwing `InterruptedException`
-
-Before a blocking code throws an InterruptedException, it marks the interruption status as false. Thus, when handling of the InterruptedException is done, you should also preserve the interruption status by calling`Thread.currentThread().interrupt()`.
+```java
+Future<?> submittedTask = executor.submit(someTask());
+// ...
+submittedTask.cancel(true) // if conditions to cancel the task have been met
+```
 
 
 
@@ -43,4 +106,5 @@ Before a blocking code throws an InterruptedException, it marks the interruption
 
 - https://dzone.com/articles/understanding-thread-interruption-in-java
 - https://docs.oracle.com/javase/tutorial/essential/concurrency/interrupt.html
+- https://stackoverflow.com/a/3976377
 - https://www.ibm.com/developerworks/library/j-jtp05236/index.html
