@@ -6,9 +6,9 @@
 
 
 
-### Visibility
+## Visibility
 
-JVM or compiler can perform vrious optimizations to our code, a consumer thread may not see changes in a variable.
+JVM or compiler can perform vrious optimizations to the code, a consumer thread may not see changes in a variable.
 
 ```java
 private static int sCount = 0;
@@ -21,7 +21,10 @@ static class Consumer extends Thread {
             if (localValue != sCount) {
                 System.out.println("Consumer: detected count change " + sCount);
                 localValue = sCount;
-              
+              	// Changes made to sCount from Producer thread may not be seen here
+              	// due to JVM or compiler can perform code optimizations.
+              	// The local cached version of sCount might be used instead.
+              	// Bad case: this thread will run forever.
             }
             if (sCount >= 5) {
                 break;
@@ -34,17 +37,11 @@ static class Consumer extends Thread {
 
 
 
+## Atomicity
 
 
 
-
-### Atomicity
-
-
-
-
-
-### Happens-Before
+## Happens-Before
 
 
 
