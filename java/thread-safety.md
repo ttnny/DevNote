@@ -35,9 +35,30 @@ static class Consumer extends Thread {
 }
 ```
 
+Making `sCount` `volatile` resolves the issue.
+
+```java
+private volatile int sCount = 0;
+```
+
+`volatile` makes sure that changes made in one thread are immediately reflect in other thread. `sCount` value will be saved/retreived directly from memory without caches. 
+
 
 
 ## Atomicity
+
+Race condition occurs when multiple processes or threads perform read/write operations on a set of data.
+
+```java
+new Thread(() -> {
+  for (int i = 0; i < 10; i++) {
+    sCount++;
+    // When multiple threads 
+  }
+}).start();
+```
+
+
 
 
 
