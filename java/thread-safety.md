@@ -11,51 +11,50 @@
 JVM or compiler can perform vrious optimizations to the code, a consumer thread may not see changes in a variable.
 
 ```java
-private static int sCount = 0;
+private int mCount = 0;
 
-static class Consumer extends Thread {
-    @Override
-    public void run() {
-        int localValue = -1;
-        while (true) {
-            if (localValue != sCount) {
-                System.out.println("Consumer: detected count change " + sCount);
-                localValue = sCount;
-              	// Changes made to sCount from Producer thread may not be seen here
-              	// due to JVM or compiler can perform code optimizations.
-              	// The local cached version of sCount might be used instead.
-              	// Bad case: this thread will run forever.
-            }
-            if (sCount >= 5) {
-                break;
-            }
+private void startCountThread() {
+    new Thread(() -> {
+        for (int i = 0; i < 10; i++) {
+            mCount++;
+          	// Changes made to mCount from other threads may not be seen here,
+            // and vice versa, due to JVM/compiler can perform code optimizations.
+            // The local cached version of mCount might be used in some operations
+          	// of this thread or other theads.
         }
-        System.out.println("Consumer: terminating");
-    }
+    }).start();
 }
 ```
 
-Making `sCount` `volatile` resolves the issue.
+Making `mCount` `volatile` resolves the visibility issue.
 
 ```java
-private volatile int sCount = 0;
+private volatile int mCount = 0;
 ```
 
-`volatile` makes sure that changes made in one thread are immediately reflect in other thread. `sCount` value will be saved/retreived directly from memory without caches. 
+`volatile` makes sure that changes made in one thread are immediately reflect in other thread. `mCount` value will be saved/retreived directly from memory without caches.
+
+`volatile` itself may not make `mCount` thread-safe, atomicity should also be considered.
 
 
 
 ## Atomicity
 
-Race condition occurs when multiple processes or threads perform read/write operations on a set of data.
+Race condition occurs when multiple processes or threads perform read/write operations on a set of data. These operations are non-atomic 
 
 ```java
-new Thread(() -> {
-  for (int i = 0; i < 10; i++) {
-    sCount++;
-    // When multiple threads 
-  }
-}).start();
+private volatile mCount = 0;
+
+private void startCountThread() {
+    new Thread(() -> {
+        for (int i = 0; i < 10; i++) {
+            mCount++;
+          	// mCount is volatile and the visibility is secured.
+          	// However, this increment operation is non-atomic and may not
+    				// behave consistently in multi-threaded environment.
+        }
+    }).start();
+}
 ```
 
 
