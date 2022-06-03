@@ -40,7 +40,7 @@ private volatile int mCount = 0;
 
 ## Atomicity
 
-Race condition occurs when multiple processes or threads perform read/write operations on a set of data. These operations are non-atomic 
+Race condition occurs when multiple processes or threads perform read/write operations on a set of data. These operations are non-atomic. Making an operation atomic guarantees that no other threads can modify the set of data, which is being used, until the operation is complete.
 
 ```java
 private volatile mCount = 0;
@@ -57,7 +57,38 @@ private void startCountThread() {
 }
 ```
 
+Resolves using Atomic classes:
 
+```java
+private volatile AtomicInteger mCount = new AtomicInteger(0);
+// We still need volatile to ensure that mCount is
+// accessed from the same reference in all threads.
+
+private void startCountThread() {
+    new Thread(() -> {
+        for (int i = 0; i < 10; i++) {
+            mCount.getAndIncrement();
+        }
+    }).start();
+}
+```
+
+Resolves using synchronization:
+
+```java
+private final Object LOCK = new Object();
+private int mCount = 0;
+
+private void startCountThread() {
+    new Thread(() -> {
+      	synchronized(LOCK) {
+          	for (int i = 0; i < 10; i++) {
+              	mCount.getAndIncrement();
+          	}
+        }
+    }).start();
+}
+```
 
 
 
