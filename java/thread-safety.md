@@ -2,7 +2,7 @@
 
 - Visibility
 - Atomicity
-- Happens-Before
+- Happens-Before (lower level of Visibility)
 
 
 
@@ -57,11 +57,11 @@ private void startCountThread() {
 }
 ```
 
-Resolves using Atomic classes:
+#### Resolves using Atomic classes:
 
 ```java
 private volatile AtomicInteger mCount = new AtomicInteger(0);
-// We still need volatile to ensure that mCount is
+// We still need volatile (or final) to ensure that mCount is
 // accessed from the same reference in all threads.
 
 private void startCountThread() {
@@ -73,7 +73,14 @@ private void startCountThread() {
 }
 ```
 
-Resolves using synchronization:
+Or using `final` depends on the case. Final variables are thread-safe.
+
+```java
+private final AtomicInteger mCount = new AtomicInteger(0);
+// ...
+```
+
+#### Resolves using synchronization:
 
 ```java
 private final Object LOCK = new Object();
@@ -94,11 +101,29 @@ private void startCountThread() {
 
 ## Happens-Before
 
+***hb(A, B)** indicates A happens-before B*
 
+Happens-Before **rules**:
+
+- A and B on the same thread: A comes before B in program order (as in the code).
+- A synchronizes with a following B
+- If hb(A, B) and hb(B, C), then hb(A, C).
+
+- There is a happens-before from the end of constructor of an object to the start of a finalizer for that object.
+
+Happens-Before **guarantees**:
+
+- Unlock/release a monitor (lock object) happens-before every subsequent lock/acquire that monitor.
+- Write to a `volatile` field happens-before read of that field.
+- `Thread.start()` happens-before any actions in that started thread.
+- Actions in a thread happens-before any other thread successfully returns from a `join()` on that thread.
+- Default initialization of an object happens-before any other actions (other than default-writes) of a program.
 
 
 
 ------
+
+https://docs.oracle.com/javase/specs/jls/se18/html/jls-17.html
 
 https://www.udemy.com/course/android-multithreading/
 
